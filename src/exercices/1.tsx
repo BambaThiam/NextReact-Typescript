@@ -3,20 +3,24 @@
 import clsx from "clsx";
 import { ComponentPropsWithoutRef } from "react";
 
-// 🦁 Supprime ce commentaire et définis correctement les types pour ce composant
 // type SquareProps = any;
 type SquareProps = {
-  children: React.ReactNode;
-  isWinningSquare: boolean;
+  children?: React.ReactNode;
+  isWinningSquare?: boolean;
 } & ComponentPropsWithoutRef<"button">;
 
+type SquareValue = 'X' | 'O' | null;
+type BoardProps = {
+  squares: SquareValue[];
+  onClick: (i: number) => void;
+  winningSquares?: number[];
+};
+
 const Square = ({ children, isWinningSquare, ...props }: SquareProps ) => {
-  // 🦁 Remplace ça par les props définies en haut
   return (
     <button
       className={clsx("square", {
-        // "winning-square": false, // 🦁 Remplace ça par la prop isWinningSquare
-      isWinningSquare,
+        "winning-square": isWinningSquare,
       })} {...props}
     >
       {children}
@@ -24,15 +28,40 @@ const Square = ({ children, isWinningSquare, ...props }: SquareProps ) => {
   );
 };
 
+const Board = ({ squares, onClick, winningSquares }: BoardProps) => {
+  return <div className="game-board">{
+    squares.map((square, index) => (
+      <Square
+        onClick={() => onClick?.(index)}
+        isWinningSquare={winningSquares?.includes(index)}
+        key={`square-${index}`}
+      >
+        {square}
+      </Square>
+    ))
+  }</div>;
+}
 const Game = () => {
+  const getDefaultSquares = (): SquareValue[] => [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "O",
+    null,
+    "X",
+  ];
+
   return (
     <div className="game">
-      <Square isWinningSquare={true}>X</Square>
-      <Square isWinningSquare={false}>X</Square>
-      <Square isWinningSquare={true}>O</Square>
+      <Board squares={getDefaultSquares()} onClick={i => console.log(i)} winningSquares={[0, 1, 2]} />
     </div>
   );
 };
+
+
 
 export default function App() {
   return (
