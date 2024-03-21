@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/prefer-ts-expect-error */
 import clsx from "clsx";
 import { ComponentPropsWithoutRef } from "react";
+import { calculateNextValue, calculateStatus } from "../lib/tictactoe/helpers";
 
 // type SquareProps = any;
 type SquareProps = {
@@ -12,9 +13,13 @@ type SquareProps = {
 type SquareValue = 'X' | 'O' | null;
 type BoardProps = {
   squares: SquareValue[];
-  onClick: (i: number) => void;
+  onClick?: (i: number) => void;
   winningSquares?: number[];
 };
+
+type statusProps = {
+  status: string;
+}
 
 const Square = ({ children, isWinningSquare, ...props }: SquareProps ) => {
   return (
@@ -27,6 +32,15 @@ const Square = ({ children, isWinningSquare, ...props }: SquareProps ) => {
     </button>
   );
 };
+
+const GameInfo = ({ status }: statusProps) => {
+  return (
+    <div className="game-info">
+      <div>{status}</div>
+    </div>
+  );
+  
+}
 
 const Board = ({ squares, onClick, winningSquares }: BoardProps) => {
   return <div className="game-board">{
@@ -53,10 +67,15 @@ const Game = () => {
     null,
     "X",
   ];
+  const squares = getDefaultSquares();
+  const nextValue = calculateNextValue(squares);
+  const status = calculateStatus(squares, nextValue);
 
   return (
     <div className="game">
-      <Board squares={getDefaultSquares()} onClick={i => console.log(i)} winningSquares={[0, 1, 2]} />
+      {/* <Board squares={getDefaultSquares()} onClick={i => console.log(i)} winningSquares={[0, 1, 2]} /> */}
+      <GameInfo status={status} />
+      <Board squares={squares} />
     </div>
   );
 };

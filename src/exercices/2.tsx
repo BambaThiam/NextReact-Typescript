@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Board } from "../lib/tictactoe/Board";
 import {
+  SquareValue,
   calculateNextValue,
   calculateStatus,
   getDefaultSquares,
@@ -19,7 +21,8 @@ const GameInfo = ({ status }: GameInfoProps) => {
 
 const Game = () => {
   // 🦁 Utilise `useState` pour gérer l'état des cases (attention à l'utiliser correctement) et résout les erreurs TypeScript
-  const squares = getDefaultSquares();
+  const [squares, setSquares] = useState(getDefaultSquares());
+  // const squares = getDefaultSquares();
 
   const nextValue = calculateNextValue(squares);
   const status = calculateStatus(squares, nextValue);
