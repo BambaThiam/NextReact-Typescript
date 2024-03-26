@@ -4,6 +4,7 @@ import { GameInfo } from "../lib/tictactoe/GameInfo";
 import {
   calculateNextValue,
   calculateStatus,
+  calculateWinner,
   getDefaultSquares,
   NonNullableUserNames,
   SquareValue,
@@ -69,6 +70,8 @@ type UseGameReturnType = {
   status: string;
   setUserNames: (userNames: UserNames) => void;
   onSquareClick: (index: number) => void;
+  winner?: string | null;
+  winningSquares?: number[];
 };
 
 // 🦁 Utilise le type ci-dessus pour créer un context qui est par défaut à `null`
@@ -89,13 +92,19 @@ const GameProvider = ({ children }: PropsWithChildren) => {
   const xUserName = userNames.X;
   const oUserName = userNames.O;
 
+  const {winner, winningSquares } = calculateWinner(squares);
+
   const status = calculateStatus(
     squares,
-    `${userNames[nextValue]}'s turn (${nextValue})`
+    `${userNames[nextValue]}'s turn (${nextValue})`,
+    winner ? userNames[winner] : winner
   );
 
   const onSquareClick = (index: number) => {
     if (squares[index] || index < 0 || index > squares.length - 1) {
+      return;
+    }
+    if (winner) {
       return;
     }
     const newSquares = [...squares];
@@ -110,6 +119,8 @@ const GameProvider = ({ children }: PropsWithChildren) => {
     status,
     setUserNames,
     onSquareClick,
+    winner,
+    winningSquares
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
@@ -126,7 +137,7 @@ const useGame = (): UseGameReturnType => {
   return context;
 }
 const Game = () => {
-  const { squares, xUserName, oUserName, status, onSquareClick } = useGame();
+  const { squares, xUserName, oUserName, status, onSquareClick, winner, winningSquares } = useGame();
 
   if (!xUserName || !oUserName) {
     return (
@@ -147,7 +158,7 @@ const Game = () => {
           O: oUserName,
         }}
       />
-      <Board squares={squares} onClick={onSquareClick} />
+      <Board squares={squares} onClick={onSquareClick} winningSquares={winningSquares} />
     </div>
   );
 };
