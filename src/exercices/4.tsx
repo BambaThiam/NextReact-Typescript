@@ -1,4 +1,4 @@
-import { FormEvent, RefObject, useRef, useState } from "react";
+import { FormEvent, PropsWithChildren, RefObject, createContext, useContext, useRef, useState } from "react";
 import { Board } from "../lib/tictactoe/Board";
 import { GameInfo } from "../lib/tictactoe/GameInfo";
 import {
@@ -21,9 +21,11 @@ type UseUserNamesFormReturnType = {
 };
 
 // 🦁 Supprime les props et utilise notre context pour récupérer les valeurs
-const useUserNamesForm = (
-  onUserNamesSubmitted: (userNames: NonNullableUserNames) => void
-): UseUserNamesFormReturnType => {
+
+
+const useUserNamesForm = (): UseUserNamesFormReturnType => {
+const {setUserNames} = useGame()
+
   const userXRef = useRef<HTMLInputElement>(null);
   const userORef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +37,7 @@ const useUserNamesForm = (
       return;
     }
 
-    onUserNamesSubmitted({ X: userX, O: userO });
+    setUserNames({ X: userX, O: userO });
   };
 
   return {
@@ -45,9 +47,8 @@ const useUserNamesForm = (
   };
 };
 
-const UserNameForm = ({ onUserNamesSubmitted }: UserNameFormProps) => {
-  const { userXRef, userORef, onSubmit } =
-    useUserNamesForm(onUserNamesSubmitted);
+const UserNameForm = () => {
+  const { userXRef, userORef, onSubmit } = useUserNamesForm();
 
   return (
     <form onSubmit={onSubmit} className="vertical-stack">
@@ -67,15 +68,17 @@ type UseGameReturnType = {
   oUserName: string | null;
   status: string;
   setUserNames: (userNames: UserNames) => void;
+  onSquareClick: (index: number) => void;
 };
 
 // 🦁 Utilise le type ci-dessus pour créer un context qui est par défaut à `null`
-
+const GameContext = createContext<UseGameReturnType | null>(null);
 // 🦁 Refactor useGame pour qu'il devienne `GameProvider`
 // Il doit prendre en paramètre un children
 // Il doit retourner le contexte créé plus haut avec le children
-const useGame = (): UseGameReturnType => {
-  const [squares] = useState<SquareValue[]>(() => getDefaultSquares());
+
+const GameProvider = ({ children }: PropsWithChildren) => {
+  const [squares, setSquares] = useState<SquareValue[]>(() => getDefaultSquares());
   const [userNames, setUserNames] = useState<UserNames>({
     X: "Player X",
     O: "Player O",
@@ -91,27 +94,46 @@ const useGame = (): UseGameReturnType => {
     `${userNames[nextValue]}'s turn (${nextValue})`
   );
 
-  return {
+  const onSquareClick = (index: number) => {
+    if (squares[index] || index < 0 || index > squares.length - 1) {
+      return;
+    }
+    const newSquares = [...squares];
+    newSquares[index] = nextValue;
+    setSquares(newSquares);
+  }
+
+  const value = {
     squares,
     xUserName,
     oUserName,
     status,
     setUserNames,
+    onSquareClick,
   };
+
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };
 
 // 🦁 Créer la fonction `useGame` qui retourne le contexte créé plus haut et qui vérifie qu'il n'est pas `null`
 // Si c'est le cas, on throw une error
 
+const useGame = (): UseGameReturnType => {
+  const context = useContext(GameContext);
+  if (!context) {
+    throw new Error("useGame must be used within a GameProvider");
+  }
+  return context;
+}
 const Game = () => {
-  const { squares, xUserName, oUserName, status, setUserNames } = useGame();
+  const { squares, xUserName, oUserName, status, onSquareClick } = useGame();
 
   if (!xUserName || !oUserName) {
     return (
       <UserNameForm
-        onUserNamesSubmitted={(userNames) => {
-          setUserNames(userNames);
-        }}
+        // onUserNamesSubmitted={(userNames) => {
+        //   setUserNames(userNames);
+        // }}
       />
     );
   }
@@ -125,7 +147,7 @@ const Game = () => {
           O: oUserName,
         }}
       />
-      <Board squares={squares} />
+      <Board squares={squares} onClick={onSquareClick} />
     </div>
   );
 };
@@ -135,7 +157,9 @@ export default function App() {
     // 🦁 Wrap notre composant avec le context
     <div>
       <h2>TicTacToe</h2>
-      <Game />
+      <GameProvider>
+        <Game />
+      </GameProvider>
     </div>
   );
 }
